@@ -81,16 +81,7 @@ ifndef BOARD_SEPOLICY_VERS
 BOARD_SEPOLICY_VERS := $(PLATFORM_SEPOLICY_VERSION)
 endif
 
-NEVERALLOW_ARG :=
-ifeq ($(SELINUX_IGNORE_NEVERALLOWS),true)
-ifeq ($(TARGET_BUILD_VARIANT),user)
-$(error SELINUX_IGNORE_NEVERALLOWS := true cannot be used in user builds)
-endif
-$(warning Be careful when using the SELINUX_IGNORE_NEVERALLOWS flag. \
-          It does not work in user builds and using it will \
-          not stop you from failing CTS.)
 NEVERALLOW_ARG := -N
-endif
 
 # BOARD_SEPOLICY_DIRS was used for vendor/odm sepolicy customization before.
 # It has been replaced by BOARD_VENDOR_SEPOLICY_DIRS (mandatory) and
@@ -296,7 +287,6 @@ LOCAL_REQUIRED_MODULES += \
 endif # ($(PRODUCT_SEPOLICY_SPLIT),true)
 
 ifneq ($(with_asan),true)
-ifneq ($(SELINUX_IGNORE_NEVERALLOWS),true)
 LOCAL_REQUIRED_MODULES += \
     sepolicy_tests \
     $(addsuffix _compat_test,$(PLATFORM_SEPOLICY_COMPAT_VERSIONS)) \
@@ -306,7 +296,6 @@ LOCAL_REQUIRED_MODULES += \
     $(addprefix treble_sepolicy_tests_,$(PLATFORM_SEPOLICY_COMPAT_VERSIONS)) \
 
 endif  # PRODUCT_SEPOLICY_SPLIT
-endif  # SELINUX_IGNORE_NEVERALLOWS
 endif  # with_asan
 
 ifneq ($(PLATFORM_SEPOLICY_VERSION),$(TOT_SEPOLICY_VERSION))
@@ -490,7 +479,6 @@ $(LOCAL_BUILT_MODULE): PRIVATE_SEPOLICY_1 := $(sepolicy_policy.conf)
 $(LOCAL_BUILT_MODULE): PRIVATE_SEPOLICY_2 := $(sepolicy_policy_2.conf)
 $(LOCAL_BUILT_MODULE): $(sepolicy_policy.conf) $(sepolicy_policy_2.conf) \
   $(HOST_OUT_EXECUTABLES)/checkpolicy $(HOST_OUT_EXECUTABLES)/sepolicy-analyze
-ifneq ($(SELINUX_IGNORE_NEVERALLOWS),true)
 	$(hide) $(CHECKPOLICY_ASAN_OPTIONS) $(HOST_OUT_EXECUTABLES)/checkpolicy -M -c \
 		$(POLICYVERS) -o $@.tmp $(PRIVATE_SEPOLICY_1)
 	$(hide) $(HOST_OUT_EXECUTABLES)/sepolicy-analyze $@.tmp neverallow -w -f $(PRIVATE_SEPOLICY_2) || \
@@ -499,7 +487,6 @@ ifneq ($(SELINUX_IGNORE_NEVERALLOWS),true)
 	    echo "of an expanded attribute in a neverallow assertion. Please fix" 1>&2; \
 	    echo "the policy." 1>&2; \
 	    exit 1 )
-endif # ($(SELINUX_IGNORE_NEVERALLOWS),true)
 	$(hide) touch $@.tmp
 	$(hide) mv $@.tmp $@
 
